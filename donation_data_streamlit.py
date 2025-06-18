@@ -61,7 +61,7 @@ def initialize_chat(api_key, system_prompt):
 # --- Sidebar for API Key and File Upload ---
 with st.sidebar:
     st.header("Setup")
-    google_api_key = st.text_input("Enter your Google API Key", type="password")
+    google_api_key = st.secrets["GOOGLE_API_KEY"]
     uploaded_file = st.file_uploader("Upload your transaction CSV file", type=["csv"])
 
     st.markdown("---")
