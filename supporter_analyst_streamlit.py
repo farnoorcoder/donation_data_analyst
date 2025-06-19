@@ -52,58 +52,64 @@ if 'chat' not in st.session_state:
     st.session_state.chat = None
 if 'messages' not in st.session_state:
     st.session_state.messages = []
+if 'last_uploaded_filename' not in st.session_state:
+    st.session_state.last_uploaded_filename = None
 
-# Logic to start a new chat session
-if google_api_key and uploaded_file and st.session_state.chat is None:
-    with st.spinner("Analyzing your data and preparing the chatbot..."):
-        try:
-            # Load the uploaded CSV into a pandas DataFrame
-            df = pd.read_csv(uploaded_file)
-            df_string = df.to_csv(index=False)
+# Logic to start or reset a chat session when a new file is uploaded
+if google_api_key and uploaded_file:
+    # Detect if a new file is uploaded (by filename)
+    if uploaded_file.name != st.session_state.get('last_uploaded_filename'):
+        with st.spinner("Analyzing your data and preparing the chatbot..."):
+            try:
+                # Load the uploaded CSV into a pandas DataFrame
+                df = pd.read_csv(uploaded_file)
+                df_string = df.to_csv(index=False)
 
-            # Construct the system prompt from your script
-            system_prompt = f"""
-            You are a data analyst AI that summarizes supporter engagement based on historical activity. You will be given a CSV file containing a supporter's record of interactions with an organization, including events attended, actions taken, and donation history.
+                # Construct the system prompt from your script
+                system_prompt = f"""
+                You are a data analyst AI that summarizes supporter engagement based on historical activity. You will be given a CSV file containing a supporter's record of interactions with an organization, including events attended, actions taken, and donation history.
 
-            Your goal is to analyze this data and produce a concise engagement summary. Your response should assess how active and committed the supporter is, referencing meaningful patterns or milestones. Be objective and data-driven, but human-readable and clear.
+                Your goal is to analyze this data and produce a concise engagement summary. Your response should assess how active and committed the supporter is, referencing meaningful patterns or milestones. Be objective and data-driven, but human-readable and clear.
 
-            The CSV may contain fields such as:
-            - `Campaign Date`, `Campaign ID`, `Campaign Type`
-            - `Action Date`, `Action Type` (e.g., petition signed, email opened)
-            - `Donation Date`, `Donation Amount`, `Campaign Name`, `Donation Type` (e.g., one-time or recurring)
+                The CSV may contain fields such as:
+                - `Campaign Date`, `Campaign ID`, `Campaign Type`
+                - `Action Date`, `Action Type` (e.g., petition signed, email opened)
+                - `Donation Date`, `Donation Amount`, `Campaign Name`, `Donation Type` (e.g., one-time or recurring)
 
-            In your summary, consider:
-            - Recency and frequency of activity
-            - Diversity of engagement types (events, actions, donations)
-            - Total and recent donation volume
-            - Participation in key events or campaigns
-            - Any signs of deepening or declining engagement over time
+                In your summary, consider:
+                - Recency and frequency of activity
+                - Diversity of engagement types (events, actions, donations)
+                - Total and recent donation volume
+                - Participation in key events or campaigns
+                - Any signs of deepening or declining engagement over time
 
-            Output a paragraph summary that classifies the supporter as **Highly Engaged**, **Moderately Engaged**, or **Minimally Engaged**, and explain why.
+                Output a paragraph summary that classifies the supporter as **Highly Engaged**, **Moderately Engaged**, or **Minimally Engaged**, and explain why.
 
-            Do not simply restate the CSV contents. Instead, interpret the patterns and trends in the data to give a narrative overview of their engagement.
+                Do not simply restate the CSV contents. Instead, interpret the patterns and trends in the data to give a narrative overview of their engagement.
 
 
-            Here is the dataset:
-            --- DATASET START ---
-            {df_string}
-            --- DATASET END ---    
+                Here is the dataset:
+                --- DATASET START ---
+                {df_string}
+                --- DATASET END ---    
 
-            Acknowledge that you have received and understood the data. Then, wait for the user's question.
-            """
-            
-            # Initialize the chat object
-            st.session_state.chat = initialize_chat(google_api_key, system_prompt)
+                Acknowledge that you have received and understood the data. Then, wait for the user's question.
+                """
 
-            # Add the initial model confirmation to the message history
-            if st.session_state.chat:
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": "OK, I have analyzed your data. What would you like to know?"
-                })
+                # Initialize the chat object
+                st.session_state.chat = initialize_chat(google_api_key, system_prompt)
+                st.session_state.messages = []  # Reset chat history
+                st.session_state.last_uploaded_filename = uploaded_file.name
 
-        except Exception as e:
-            st.error(f"An error occurred while setting up the chat: {e}")
+                # Add the initial model confirmation to the message history
+                if st.session_state.chat:
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": "OK, I have analyzed your data. What would you like to know?"
+                    })
+
+            except Exception as e:
+                st.error(f"An error occurred while setting up the chat: {e}")
 
 # Display existing messages in the chat
 for message in st.session_state.messages:
