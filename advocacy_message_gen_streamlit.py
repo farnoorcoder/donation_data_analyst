@@ -13,8 +13,10 @@ def get_campaign_summary(url):
     try:
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
-        paragraphs = soup.find_all('p')
-        text = "\n".join(p.get_text() for p in paragraphs[:5])
+        # Extract text from all visible tags (p, div, ul, li, etc.)
+        # We'll collect text from common content tags
+        content_tags = soup.find_all(['p', 'div', 'ul', 'li'])
+        text = "\n".join(tag.get_text(separator=" ", strip=True) for tag in content_tags)
         return text.strip()
     except Exception as e:
         return f"Error fetching content: {e}"
