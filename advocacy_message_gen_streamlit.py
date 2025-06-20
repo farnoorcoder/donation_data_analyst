@@ -31,6 +31,19 @@ Write a compelling and personal message asking them to take action.
     response = model.generate_content([{"role": "user", "parts": [prompt]}])
     return response.text
 
+def summarize_message(campaign_text):
+    prompt = f"""
+You are an expert in summarizing advocacy campaigns.
+Your task is to analyze the following campaign text and provide a summary and key points.
+Remove any unnecessary details and text that is not relevant to the campaign's main message.
+Here is the campaign text:
+\"\"\"{campaign_text}\"\"\"
+    """
+    response = model.generate_content([
+        {"role": "user", "parts": [prompt]}
+    ])
+    return response.text.strip()
+
 # --- Streamlit UI ---
 st.title("📝 Advocacy Message Generator")
 
@@ -42,7 +55,7 @@ with st.form("input_form"):
 
 if submitted:
     with st.spinner("Fetching campaign summary..."):
-        summary = get_campaign_summary(url)
+        summary = summarize_message(get_campaign_summary(url))
         st.subheader("📄 Campaign Summary")
         st.write(summary)
 
